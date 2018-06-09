@@ -119,9 +119,13 @@ public final class MainVideoPlayer extends AppCompatActivity
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) getWindow().setStatusBarColor(Color.BLACK);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-        WindowManager.LayoutParams lp = getWindow().getAttributes();
-        lp.screenBrightness = PlayerHelper.getScreenBrightness(getApplicationContext());
-        getWindow().setAttributes(lp);
+        // if a brightness value was set, restore the value
+        float screenBrightness = PlayerHelper.getScreenBrightness(getApplicationContext());
+        if (Float.compare(screenBrightness, WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF) >= 0) {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.screenBrightness = screenBrightness;
+            getWindow().setAttributes(lp);
+        }
 
         hideSystemUi();
         setContentView(R.layout.activity_main_player);
@@ -890,10 +894,12 @@ public final class MainVideoPlayer extends AppCompatActivity
 
         private final boolean isPlayerGestureEnabled = PlayerHelper.isPlayerGestureEnabled(getApplicationContext());
 
-        private final float stepsBrightness = 15, stepBrightness = (1f / stepsBrightness), minBrightness = .01f;
-        private float currentBrightness = getWindow().getAttributes().screenBrightness > 0
+        private final float stepsBrightness = 15;
+        private final float stepBrightness = (WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL / stepsBrightness);
+        // if a brightness value was set, use it as the starting point
+        private float currentBrightness = Float.compare(getWindow().getAttributes().screenBrightness, WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF) >= 0
                 ? getWindow().getAttributes().screenBrightness
-                : 0.5f;
+                : WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL / 2;
 
         private int currentVolume, maxVolume = playerImpl.getAudioReactor().getMaxVolume();
         private final float stepsVolume = 15, stepVolume = (float) Math.ceil(maxVolume / stepsVolume), minVolume = 0;
@@ -945,8 +951,13 @@ public final class MainVideoPlayer extends AppCompatActivity
             } else {
                 WindowManager.LayoutParams lp = getWindow().getAttributes();
                 currentBrightness += up ? stepBrightness : -stepBrightness;
-                if (currentBrightness >= 1f) currentBrightness = 1f;
-                if (currentBrightness <= minBrightness) currentBrightness = minBrightness;
+
+                // clamp value between min and max
+                if (up) {
+                    currentBrightness = Math.min(currentBrightness, WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_FULL);
+                } else {
+                    currentBrightness = Math.max(currentBrightness, WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF);
+                }
 
                 lp.screenBrightness = currentBrightness;
                 getWindow().setAttributes(lp);

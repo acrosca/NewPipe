@@ -6,6 +6,8 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.accessibility.CaptioningManager;
 
 import com.google.android.exoplayer2.SeekParameters;
@@ -264,7 +266,7 @@ public class PlayerHelper {
 
     public static float getScreenBrightness(@NonNull final Context context) {
         //a value of less than 0, the default, means to use the preferred screen brightness
-        return getScreenBrightness(context, -1);
+        return getScreenBrightness(context, WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE);
     }
 
     public static void setScreenBrightness(@NonNull final Context context, final float setScreenBrightness) {
